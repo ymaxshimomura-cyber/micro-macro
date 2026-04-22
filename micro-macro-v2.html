@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ミクロとマクロ — 視点の解剖学</title>
+<meta name="description" content="同じ世界を、どのレンズで見るか。ミクロとマクロの違いをインタラクティブに探る。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=Shippori+Mincho:wght@400;500;700&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:     #1a1814;
+  --ink-mid: #4a4640;
+  --ink-low: #9a948e;
+  --paper:   #f5f2ec;
+  --paper2:  #edeae2;
+  --red:     #c0392b;
+  --blue:    #1a3a5c;
+  --gold:    #b8860b;
+  --rule:    rgba(26,24,20,0.12);
+  --serif:   'Cormorant Garamond', 'Shippori Mincho', Georgia, serif;
+  --jp:      'Shippori Mincho', serif;
+  --mono:    'DM Mono', monospace;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--jp);
+  line-height: 1.7;
+  cursor: default;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* ── NOISE TEXTURE ── */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.6;
+}
+
+/* ── MASTHEAD ── */
+.masthead {
+  border-bottom: 2px solid var(--ink);
+  padding: 18px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  background: var(--paper);
+  z-index: 100;
+}
+
+.masthead-title {
+  font-family: var(--serif);
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--ink-mid);
+}
+
+.masthead-issue {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-low);
+  letter-spacing: 0.1em;
+}
+
+.share-btn {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: none;
+  border: 1px solid var(--ink);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 7px 16px;
+  border-radius: 0;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.share-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--ink);
+  transform: translateX(-101%);
+  transition: transform 0.25s ease;
+  z-index: 0;
+}
+
+.share-btn:hover::before { transform: translateX(0); }
+.share-btn:hover { color: var(--paper); }
+.share-btn span, .share-btn svg { position: relative; z-index: 1; }
+
+/* ── HERO ── */
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 88vh;
+  border-bottom: 1px solid var(--rule);
+}
+
+.hero-left {
+  padding: 80px 48px 80px 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  border-right: 1px solid var(--rule);
+}
+
+.issue-no {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  color: var(--ink-low);
+  text-transform: uppercase;
+  margin-bottom: 60px;
+}
+
+.hero-kicker {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 14px;
+  color: var(--red);
+  letter-spacing: 0.05em;
+  margin-bottom: 18px;
+}
+
+.hero-h1 {
+  font-family: var(--serif);
+  font-weight: 300;
+  font-size: clamp(3.2rem, 5.5vw, 6rem);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+  margin-bottom: 32px;
+}
+
+.hero-h1 .red { color: var(--red); }
+
+.hero-desc {
+  font-size: 0.95rem;
+  color: var(--ink-mid);
+  max-width: 360px;
+  line-height: 1.8;
+  border-left: 2px solid var(--red);
+  padding-left: 18px;
+}
+
+.hero-right {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 80px 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-diagram {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 240px;
+  height: 240px;
+}
+
+.lens-outer {
+  width: 240px;
+  height: 240px;
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  animation: slowSpin 40s linear infinite;
+}
+
+.lens-inner {
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  border: 1px solid rgba(26,24,20,0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.lens-core {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lens-core span {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--paper);
+  font-size: 0.7rem;
+}
+
+.lens-label {
+  position: absolute;
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--ink-low);
+}
+
+.lens-label.top { top: -18px; left: 50%; transform: translateX(-50%); }
+.lens-label.bottom { bottom: -18px; left: 50%; transform: translateX(-50%); }
+.lens-label.left { left: -28px; top: 50%; transform: translateY(-50%) rotate(-90deg); }
+.lens-label.right { right: -28px; top: 50%; transform: translateY(-50%) rotate(90deg); }
+
+.orbit-dot {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+}
+
+.orbit-dot:nth-child(1) { top: -3px; left: 50%; transform: translateX(-50%); }
+.orbit-dot:nth-child(2) { bottom: -3px; left: 50%; transform: translateX(-50%); }
+.orbit-dot:nth-child(3) { left: -3px; top: 50%; transform: translateY(-50%); }
+.orbit-dot:nth-child(4) { right: -3px; top: 50%; transform: translateY(-50%); }
+
+@keyframes slowSpin { to { transform: translate(-50%,-50%) rotate(360deg); } }
+
+.hero-footnote {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-low);
+  letter-spacing: 0.08em;
+  line-height: 1.8;
+}
+
+/* ── SECTION HEADER ── */
+.section-header {
+  display: flex;
+  align-items: baseline;
+  gap: 20px;
+  padding: 48px 48px 28px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.section-num {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1rem;
+  color: var(--red);
+}
+
+.section-label {
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  font-weight: 300;
+  letter-spacing: -0.01em;
+}
+
+.section-rule {
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+  align-self: center;
+}
+
+/* ── SLIDER SECTION ── */
+.slider-section {
+  padding: 48px 48px 0;
+}
+
+.slider-wrap {
+  display: grid;
+  grid-template-columns: 90px 1fr 90px;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 36px;
+}
+
+.slider-pole {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pole-word {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.pole-sub {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--ink-low);
+  text-transform: uppercase;
+}
+
+.slider-pole.left .pole-word { color: var(--red); text-align: right; }
+.slider-pole.right .pole-word { color: var(--blue); }
+.slider-pole.left { text-align: right; }
+
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  height: 1px;
+  background: linear-gradient(to right, var(--red) 0%, var(--ink-low) 50%, var(--blue) 100%);
+  outline: none;
+  cursor: pointer;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--ink);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+input[type=range]::-webkit-slider-thumb:hover {
+  transform: scale(1.3);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+}
+
+/* ── VIZ PANEL ── */
+.viz-panel {
+  border: 1px solid var(--rule);
+  background: var(--paper2);
+  margin: 0 48px 0;
+  padding: 36px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  min-height: 260px;
+  transition: all 0.4s ease;
+  position: relative;
+}
+
+.viz-panel::before {
+  content: attr(data-mode);
+  position: absolute;
+  top: -1px; right: 36px;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  transform: translateY(-50%);
+}
+
+.viz-col {
+  padding: 0 28px 0 0;
+}
+
+.viz-col:last-child {
+  padding: 0 0 0 28px;
+  border-left: 1px solid var(--rule);
+}
+
+.viz-col-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-col-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+
+.viz-col:first-child .viz-col-label { color: var(--red); }
+.viz-col:last-child .viz-col-label { color: var(--blue); }
+
+.viz-title-text {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 400;
+  line-height: 1.35;
+  margin-bottom: 16px;
+  transition: all 0.4s;
+}
+
+.viz-items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.viz-items li {
+  font-size: 0.85rem;
+  color: var(--ink-mid);
+  line-height: 1.55;
+  display: flex;
+  gap: 10px;
+}
+
+.viz-items li::before {
+  content: '—';
+  color: var(--ink-low);
+  flex-shrink: 0;
+  font-family: var(--serif);
+}
+
+/* ── DOMAIN SECTION ── */
+.domain-section {
+  padding: 0 48px 0;
+}
+
+.tab-bar {
+  display: flex;
+  border-bottom: 1px solid var(--rule);
+  margin-top: 36px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tab-bar::-webkit-scrollbar { display: none; }
+
+.tab {
+  font-family: var(--jp);
+  font-size: 0.85rem;
+  color: var(--ink-low);
+  padding: 12px 24px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  border-bottom: 2px solid transparent;
+  white-space: nowrap;
+  transition: all 0.2s;
+  letter-spacing: 0.05em;
+  transform: translateY(1px);
+}
+
+.tab:hover { color: var(--ink); }
+.tab.active { color: var(--red); border-bottom-color: var(--red); font-weight: 700; }
+
+.domain-body {
+  display: none;
+  padding: 40px 0;
+  animation: fadeIn 0.3s ease;
+}
+
+.domain-body.active { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--rule); }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.domain-cell {
+  background: var(--paper);
+  padding: 32px;
+}
+
+.domain-cell-tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.domain-cell.is-micro .domain-cell-tag { color: var(--red); }
+.domain-cell.is-macro .domain-cell-tag { color: var(--blue); }
+
+.domain-cell-title {
+  font-family: var(--serif);
+  font-size: 1.2rem;
+  font-weight: 400;
+  margin-bottom: 12px;
+  line-height: 1.3;
+}
+
+.domain-cell-body {
+  font-size: 0.875rem;
+  color: var(--ink-mid);
+  line-height: 1.75;
+}
+
+/* ── PERSONALITY SECTION ── */
+.personality-section {
+  padding: 0 48px 80px;
+}
+
+.spectrum-visual {
+  margin: 36px 0 40px;
+  position: relative;
+}
+
+.spectrum-track {
+  height: 2px;
+  background: linear-gradient(to right, var(--red), var(--ink-low), var(--blue));
+  position: relative;
+}
+
+.spectrum-markers {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.s-marker {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-low);
+}
+
+.s-marker.left { color: var(--red); }
+.s-marker.right { color: var(--blue); }
+
+.p-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  background: var(--rule);
+  margin-bottom: 40px;
+}
+
+.p-card {
+  background: var(--paper);
+  padding: 28px 24px;
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.p-card::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  transition: background 0.2s;
+}
+
+.p-card.is-micro::after  { background: var(--red); }
+.p-card.is-macro::after  { background: var(--blue); }
+.p-card.is-blend::after  { background: linear-gradient(to right, var(--red), var(--blue)); }
+
+.p-card:hover, .p-card.active { background: var(--paper2); }
+
+.p-card-icon {
+  font-size: 1.4rem;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.p-card-name {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.p-card-tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin-bottom: 12px;
+}
+
+.is-micro .p-card-tag { color: var(--red); }
+.is-macro .p-card-tag { color: var(--blue); }
+.is-blend .p-card-tag { color: var(--gold); }
+
+.p-card-summary {
+  font-size: 0.8rem;
+  color: var(--ink-mid);
+  line-height: 1.6;
+}
+
+/* Detail drawer */
+.p-detail {
+  display: none;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 40px;
+  animation: fadeIn 0.3s ease;
+}
+
+.p-detail.active { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+
+.p-detail-header {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(245,242,236,0.12);
+}
+
+.p-detail-icon { font-size: 2rem; }
+
+.p-detail-name {
+  font-family: var(--serif);
+  font-size: 1.6rem;
+  font-weight: 300;
+}
+
+.p-detail-type {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(245,242,236,0.45);
+  margin-top: 4px;
+}
+
+.p-detail-box h4 {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(245,242,236,0.4);
+  margin-bottom: 12px;
+}
+
+.p-detail-box p {
+  font-size: 0.87rem;
+  line-height: 1.75;
+  color: rgba(245,242,236,0.8);
+}
+
+/* ── CLOSING ── */
+.closing {
+  border-top: 2px solid var(--ink);
+  padding: 64px 48px;
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 60px;
+  align-items: center;
+}
+
+.closing-label {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.8rem;
+  font-weight: 300;
+  color: var(--ink-mid);
+  line-height: 1.3;
+}
+
+.closing-text {
+  font-size: 0.95rem;
+  line-height: 1.9;
+  color: var(--ink-mid);
+}
+
+.closing-text strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* ── SHARE TOAST ── */
+.toast {
+  position: fixed;
+  bottom: 32px;
+  left: 50%;
+  transform: translateX(-50%) translateY(80px);
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  padding: 12px 24px;
+  border-radius: 0;
+  z-index: 9000;
+  transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1);
+  white-space: nowrap;
+}
+
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--rule);
+  padding: 20px 48px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.footer-copy {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-low);
+  letter-spacing: 0.08em;
+}
+
+/* ── RESPONSIVE ── */
+@media (max-width: 780px) {
+  .masthead { padding: 14px 20px; }
+  .masthead-title { display: none; }
+  .hero { grid-template-columns: 1fr; min-height: auto; }
+  .hero-left { padding: 40px 20px; border-right: none; border-bottom: 1px solid var(--rule); }
+  .hero-right { padding: 40px 20px; min-height: 280px; }
+  .hero-diagram { width: 180px; height: 180px; }
+  .lens-outer { width: 180px; height: 180px; }
+  .lens-inner { width: 120px; height: 120px; }
+  .section-header { padding: 32px 20px 20px; }
+  .slider-section, .domain-section, .personality-section { padding-left: 20px; padding-right: 20px; }
+  .slider-wrap { grid-template-columns: 60px 1fr 60px; gap: 12px; }
+  .pole-word { font-size: 0.9rem; }
+  .viz-panel { margin: 0 20px; padding: 20px; grid-template-columns: 1fr; gap: 20px; }
+  .viz-col:last-child { padding: 20px 0 0 0; border-left: none; border-top: 1px solid var(--rule); }
+  .domain-body.active { grid-template-columns: 1fr; }
+  .p-grid { grid-template-columns: 1fr 1fr; }
+  .p-detail.active { grid-template-columns: 1fr; }
+  .closing { grid-template-columns: 1fr; padding: 40px 20px; gap: 24px; }
+  footer { padding: 16px 20px; flex-direction: column; gap: 8px; text-align: center; }
+}
+
+@media (max-width: 480px) {
+  .p-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- MASTHEAD -->
+<header class="masthead">
+  <div class="masthead-title">思考の解剖学</div>
+  <div class="masthead-issue">Vol. I — Micro &amp; Macro</div>
+  <button class="share-btn" id="shareBtn" aria-label="シェアする">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    <span>シェア</span>
+  </button>
+</header>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-left">
+    <div class="issue-no">Essay No. 001 — 視点と認識</div>
+    <div>
+      <div class="hero-kicker">同じ世界を、異なるレンズで見るとき</div>
+      <h1 class="hero-h1">ミクロと<br>マクロ、<br><span class="red">視点</span>の<br>解剖学</h1>
+    </div>
+    <p class="hero-desc">
+      細部に宿る神か、全体に宿る法則か。<br>
+      ミクロとマクロは対立ではなく、<br>
+      ズームの使い方の問題だ。
+    </p>
+  </div>
+  <div class="hero-right">
+    <div class="hero-diagram" aria-hidden="true">
+      <div class="lens-outer">
+        <div class="orbit-dot"></div>
+        <div class="orbit-dot"></div>
+        <div class="orbit-dot"></div>
+        <div class="orbit-dot"></div>
+        <div class="lens-inner">
+          <div class="lens-core"><span>視点</span></div>
+          <div class="lens-label top">MACRO</div>
+          <div class="lens-label bottom">MICRO</div>
+        </div>
+      </div>
+    </div>
+    <p class="hero-footnote">
+      ▲ スクロールして探索する<br>
+      スライダーで視点を切り替え<br>
+      カードをタップして詳細を見る
+    </p>
+  </div>
+</section>
+
+<!-- SECTION 01: SLIDER -->
+<div class="section-header">
+  <span class="section-num">§ 01</span>
+  <span class="section-label">視点ズームスライダー</span>
+  <div class="section-rule"></div>
+</div>
+
+<div class="slider-section">
+  <div class="slider-wrap">
+    <div class="slider-pole left">
+      <div class="pole-word">ミクロ</div>
+      <div class="pole-sub">Micro</div>
+    </div>
+    <input type="range" id="zoomSlider" min="0" max="100" value="50" aria-label="視点スライダー">
+    <div class="slider-pole right">
+      <div class="pole-word">マクロ</div>
+      <div class="pole-sub">Macro</div>
+    </div>
+  </div>
+</div>
+
+<div class="viz-panel" id="vizPanel" data-mode="BLEND">
+  <div class="viz-col">
+    <div class="viz-col-label" id="colLabel1">得られるもの</div>
+    <div class="viz-title-text" id="vizTitleLeft"></div>
+    <ul class="viz-items" id="vizListLeft"></ul>
+  </div>
+  <div class="viz-col">
+    <div class="viz-col-label" id="colLabel2">見えにくくなるもの</div>
+    <div class="viz-title-text" id="vizTitleRight"></div>
+    <ul class="viz-items" id="vizListRight"></ul>
+  </div>
+</div>
+
+<!-- SECTION 02: DOMAINS -->
+<div class="section-header" style="margin-top: 64px;">
+  <span class="section-num">§ 02</span>
+  <span class="section-label">分野別に見る</span>
+  <div class="section-rule"></div>
+</div>
+
+<div class="domain-section">
+  <div class="tab-bar">
+    <button class="tab active" data-tab="eco">経済学</button>
+    <button class="tab" data-tab="bio">生物学</button>
+    <button class="tab" data-tab="soc">社会学</button>
+    <button class="tab" data-tab="psy">心理学</button>
+    <button class="tab" data-tab="his">歴史学</button>
+  </div>
+
+  <div id="tab-eco" class="domain-body active">
+    <div class="domain-cell is-micro">
+      <div class="domain-cell-tag">ミクロ経済学</div>
+      <div class="domain-cell-title">個人・企業の意思決定</div>
+      <div class="domain-cell-body">一つの企業の価格設定、消費者の購買行動、市場の需要と供給。木を見る視点。「このりんご1個はなぜ200円か？」という問いから始まる。</div>
+    </div>
+    <div class="domain-cell is-macro">
+      <div class="domain-cell-tag">マクロ経済学</div>
+      <div class="domain-cell-title">国家・経済全体の動き</div>
+      <div class="domain-cell-body">GDP、インフレ率、失業率、国際収支。森を見る視点。「日本経済全体の景気はなぜ停滞しているか？」という問いを扱う。</div>
+    </div>
+  </div>
+
+  <div id="tab-bio" class="domain-body">
+    <div class="domain-cell is-micro">
+      <div class="domain-cell-tag">ミクロ生物学</div>
+      <div class="domain-cell-title">細胞・分子レベルの世界</div>
+      <div class="domain-cell-body">DNAの複製、細胞内のタンパク質合成、ウイルスの感染機序。電子顕微鏡で見える世界。nm（ナノメートル）単位の精度で生命を解剖する。</div>
+    </div>
+    <div class="domain-cell is-macro">
+      <div class="domain-cell-tag">マクロ生物学</div>
+      <div class="domain-cell-title">生態系・種のレベル</div>
+      <div class="domain-cell-body">生態系のエネルギー循環、種の進化、食物連鎖。衛星写真で見える世界。森全体の変化や、気候変動が生物多様性に与える影響を追う。</div>
+    </div>
+  </div>
+
+  <div id="tab-soc" class="domain-body">
+    <div class="domain-cell is-micro">
+      <div class="domain-cell-tag">ミクロ社会学</div>
+      <div class="domain-cell-title">対面・相互作用の分析</div>
+      <div class="domain-cell-body">日常会話のパターン、二者間の権力関係、家族内コミュニケーション。個人の行為・言語・身振りに注目し、社会を積み上げる最小単位を見る。</div>
+    </div>
+    <div class="domain-cell is-macro">
+      <div class="domain-cell-tag">マクロ社会学</div>
+      <div class="domain-cell-title">制度・構造のレベル</div>
+      <div class="domain-cell-body">社会階層、ジェンダー構造、国家と市民の関係、資本主義システム。個人の行為を規定する「見えない力」＝社会構造そのものを問う。</div>
+    </div>
+  </div>
+
+  <div id="tab-psy" class="domain-body">
+    <div class="domain-cell is-micro">
+      <div class="domain-cell-tag">ミクロ心理学</div>
+      <div class="domain-cell-title">神経・認知レベルの機序</div>
+      <div class="domain-cell-body">ニューロンの発火パターン、記憶の符号化・検索プロセス、瞬間的な感情反応。脳内のメカニズムから人間の行動を説明しようとする。</div>
+    </div>
+    <div class="domain-cell is-macro">
+      <div class="domain-cell-tag">マクロ心理学</div>
+      <div class="domain-cell-title">社会・文化が形成する心</div>
+      <div class="domain-cell-body">文化が人格形成に与える影響、社会規範と行動、世代をまたぐ心理的パターン。個人の内部より、環境との相互作用に注目する視点。</div>
+    </div>
+  </div>
+
+  <div id="tab-his" class="domain-body">
+    <div class="domain-cell is-micro">
+      <div class="domain-cell-tag">ミクロヒストリー</div>
+      <div class="domain-cell-title">個人・村・出来事の細部</div>
+      <div class="domain-cell-body">一人の農民の生涯、ある村の一年、特定の裁判記録。虫眼鏡で歴史を読む。カルロ・ギンズブルグが開拓した「証拠の糸」から大きな物語を紡ぐ手法。</div>
+    </div>
+    <div class="domain-cell is-macro">
+      <div class="domain-cell-tag">マクロヒストリー</div>
+      <div class="domain-cell-title">文明・時代の大きな流れ</div>
+      <div class="domain-cell-body">産業革命の原因、帝国の興亡、文明間の交流。千年・百年単位の俯瞰。『銃・病原菌・鉄』のように、構造的要因から歴史の方向を説明する。</div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 03: PERSONALITY -->
+<div class="section-header" style="margin-top: 64px;">
+  <span class="section-num">§ 03</span>
+  <span class="section-label">性格への適用</span>
+  <div class="section-rule"></div>
+</div>
+
+<div class="personality-section">
+  <div class="spectrum-visual">
+    <div class="spectrum-track"></div>
+    <div class="spectrum-markers">
+      <span class="s-marker left">🔬 ミクロ思考</span>
+      <span class="s-marker center">⚖ バランス</span>
+      <span class="s-marker right">🌍 マクロ思考</span>
+    </div>
+  </div>
+
+  <div class="p-grid" id="pGrid">
+    <div class="p-card is-micro" data-id="detail">
+      <span class="p-card-icon">🔬</span>
+      <div class="p-card-name">ディテール職人</div>
+      <div class="p-card-tag">Micro Type</div>
+      <div class="p-card-summary">細部に神が宿ると信じる。一つのことを深く追求する完璧主義。</div>
+    </div>
+    <div class="p-card is-micro" data-id="analyst">
+      <span class="p-card-icon">🧩</span>
+      <div class="p-card-name">分析家</div>
+      <div class="p-card-tag">Micro Type</div>
+      <div class="p-card-summary">データ・証拠を重視。感覚より事実。問題を細かく分解して考える。</div>
+    </div>
+    <div class="p-card is-blend" data-id="bridge">
+      <span class="p-card-icon">🌉</span>
+      <div class="p-card-name">橋渡し型</div>
+      <div class="p-card-tag">Blend Type</div>
+      <div class="p-card-summary">ミクロとマクロの翻訳者。両方の言語を話せる稀有な存在。</div>
+    </div>
+    <div class="p-card is-macro" data-id="visionary">
+      <span class="p-card-icon">🌍</span>
+      <div class="p-card-name">ビジョナリー</div>
+      <div class="p-card-tag">Macro Type</div>
+      <div class="p-card-summary">大きな絵を描く。細部より方向性を重視。未来・構造を語る。</div>
+    </div>
+    <div class="p-card is-macro" data-id="strategist">
+      <span class="p-card-icon">♟️</span>
+      <div class="p-card-name">戦略家</div>
+      <div class="p-card-tag">Macro Type</div>
+      <div class="p-card-summary">長期思考とパターン認識。個別より全体の構造を先に把握する。</div>
+    </div>
+    <div class="p-card is-blend" data-id="adaptive">
+      <span class="p-card-icon">🔄</span>
+      <div class="p-card-name">適応型</div>
+      <div class="p-card-tag">Blend Type</div>
+      <div class="p-card-summary">状況に応じてズームイン/アウトを切り替える。文脈読解力が高い。</div>
+    </div>
+  </div>
+
+  <div class="p-detail" id="pDetail">
+    <div class="p-detail-header">
+      <span class="p-detail-icon" id="dIcon"></span>
+      <div>
+        <div class="p-detail-name" id="dName"></div>
+        <div class="p-detail-type" id="dType"></div>
+      </div>
+    </div>
+    <div class="p-detail-box">
+      <h4>強み</h4>
+      <p id="dStrength"></p>
+    </div>
+    <div class="p-detail-box">
+      <h4>盲点・落とし穴</h4>
+      <p id="dWeakness"></p>
+    </div>
+    <div class="p-detail-box">
+      <h4>向いている状況</h4>
+      <p id="dSituation"></p>
+    </div>
+    <div class="p-detail-box">
+      <h4>補完的パートナー</h4>
+      <p id="dPartner"></p>
+    </div>
+  </div>
+</div>
+
+<!-- CLOSING -->
+<div class="closing">
+  <div class="closing-label">結論として。</div>
+  <p class="closing-text">
+    ミクロとマクロは対立ではなく、<strong>相互補完</strong>だ。優れた思考者は「ズームレンズ」を持っている。細部を見る解像度と、全体を俯瞰する高度を、<strong>意図的に切り替えられる</strong>人こそが、複雑な問題を本当に理解できる。<br><br>
+    あなたの研究も、<strong>ミクロな個人の性格観察</strong>と<strong>マクロな社会・文化的パターン</strong>の両軸で見るとより豊かになる。どちらの視点が「自然に出る」かを観察することが、その人の思考スタイルを読む鍵だ。
+  </p>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-copy">思考の解剖学 — Vol. I</div>
+  <div class="footer-copy">Micro &amp; Macro · Interactive Essay</div>
+</footer>
+
+<div class="toast" id="toast">リンクをコピーしました</div>
+
+<script>
+/* ── SLIDER ── */
+const slider = document.getElementById('zoomSlider');
+const vizPanel = document.getElementById('vizPanel');
+const vizTitleLeft = document.getElementById('vizTitleLeft');
+const vizTitleRight = document.getElementById('vizTitleRight');
+const vizListLeft = document.getElementById('vizListLeft');
+const vizListRight = document.getElementById('vizListRight');
+const colLabel1 = document.getElementById('colLabel1');
+const colLabel2 = document.getElementById('colLabel2');
+
+const states = {
+  micro: {
+    mode: 'MICRO',
+    titleLeft: '細部に宿る真実',
+    titleRight: '見えなくなる全体',
+    label1: '得られるもの',
+    label2: '失われる視野',
+    left: [
+      '個々の要素を精密に分析できる',
+      '具体的なデータ・事実を重視する',
+      '因果関係を細かく追跡できる',
+      '例外や異常値を見逃さない'
+    ],
+    right: [
+      '全体像が見えにくくなる',
+      '他要素との関連が薄れる',
+      '長期的トレンドを見落とす',
+      '森を見ずに木を見てしまう'
+    ]
+  },
+  blend: {
+    mode: 'BLEND',
+    titleLeft: 'ミクロの武器',
+    titleRight: 'マクロの武器',
+    label1: '細部から拾う',
+    label2: '全体から読む',
+    left: [
+      '細部の観察から洞察を引き出す',
+      'データと文脈を組み合わせる',
+      '個別事例と全体傾向をつなぐ',
+      '状況に応じて視点を切り替える'
+    ],
+    right: [
+      '全体の構造を把握しながら',
+      '個別の例外も等しく尊重する',
+      'どちらかに偏らず総合判断する',
+      'ズームの使い分けそのものが鍵'
+    ]
+  },
+  macro: {
+    mode: 'MACRO',
+    titleLeft: '全体に宿るパターン',
+    titleRight: '見えなくなる細部',
+    label1: '得られるもの',
+    label2: '失われる視野',
+    left: [
+      '全体のトレンドを俯瞰できる',
+      'システム間の関係を理解できる',
+      '長期的なパターンを読み取れる',
+      '構造的な原因を特定できる'
+    ],
+    right: [
+      '個別の詳細が見えなくなる',
+      '例外・異常値を見落としやすい',
+      '現場感覚が薄れがちになる',
+      '抽象的すぎて実装が難しくなる'
+    ]
+  }
+};
+
+function updateSlider(val) {
+  const st = val < 35 ? states.micro : val > 65 ? states.macro : states.blend;
+  vizPanel.setAttribute('data-mode', st.mode);
+  colLabel1.textContent = st.label1;
+  colLabel2.textContent = st.label2;
+  vizTitleLeft.textContent = st.titleLeft;
+  vizTitleRight.textContent = st.titleRight;
+  vizListLeft.innerHTML = st.left.map(t => `<li>${t}</li>`).join('');
+  vizListRight.innerHTML = st.right.map(t => `<li>${t}</li>`).join('');
+}
+
+slider.addEventListener('input', e => updateSlider(+e.target.value));
+updateSlider(50);
+
+/* ── TABS ── */
+document.querySelectorAll('.tab').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.domain-body').forEach(d => d.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+/* ── PERSONALITY ── */
+const pData = {
+  detail: {
+    icon: '🔬', name: 'ディテール職人', type: 'Micro Type',
+    strength: '誰もが見逃す細部を拾う能力。品質保証、バグ発見、精緻な矛盾の指摘が得意。「神は細部に宿る」を体現する存在。',
+    weakness: '森を見ずに木を見る傾向。全体最適より局所最適に陥りやすい。「なぜそれが重要か」の優先順位付けが苦手になることも。',
+    situation: '品質管理・研究実験・文書校正・精密作業。スタートアップより大企業の専門職ポジションに向いている。',
+    partner: 'ビジョナリーや戦略家。大きな方向性を示してもらい、自分はその実装の完成度を高める役割分担が機能しやすい。'
+  },
+  analyst: {
+    icon: '🧩', name: '分析家', type: 'Micro Type',
+    strength: 'データ読解力と論理的分解力。感情に流されず事実ベースで判断。複雑な問題を整理・構造化する力が際立つ。',
+    weakness: '分析麻痺（Analysis Paralysis）に陥りやすい。データがない状況での決断が苦手。人間関係の感情的側面を見落とすことがある。',
+    situation: 'コンサルティング・データサイエンス・法的判断・リスク評価。「なぜ」を数字と論理で説明する必要がある場面。',
+    partner: '直感型・感性型の人。データが語れないものを感じ取る能力を持つ人と組むことで、見えていなかった盲点を補える。'
+  },
+  bridge: {
+    icon: '🌉', name: '橋渡し型', type: 'Blend Type',
+    strength: 'ミクロとマクロの翻訳者。現場の声を経営層に届け、戦略を現場に落とし込める。両方の言語が話せる稀有な存在。',
+    weakness: 'どちらにも深く入れないと感じることも。専門家から「浅い」と見られるリスク。自分のアイデンティティが曖昧になりやすい。',
+    situation: 'プロジェクトマネジメント・事業開発・教育・コーチング。複数の視点を統合して伝える必要がある場面で真価を発揮する。',
+    partner: 'ディープな専門家たち。橋渡し型は広くつながることで真価を発揮し、深い専門性を持つ人との協働が鍵になる。'
+  },
+  visionary: {
+    icon: '🌍', name: 'ビジョナリー', type: 'Macro Type',
+    strength: '未来を描く力。「なぜこれをやるのか」の意義を語れる。人を動かすナラティブを作る。組織の方向性の羅針盤になれる。',
+    weakness: '実装の詳細に無頓着になりがち。「どうやって」の答えが甘い。壮大なビジョンが絵に描いた餅で終わるリスク。',
+    situation: 'リーダーシップポジション・スタートアップ創業・社会変革・クリエイティブ方向性の決定。意義と方向性が問われる場面。',
+    partner: 'ディテール職人・分析家。ビジョンを現実に変える実務能力を持つ人が必須のパートナーになる。'
+  },
+  strategist: {
+    icon: '♟️', name: '戦略家', type: 'Macro Type',
+    strength: 'パターン認識とシステム思考。短期の騒音に惑わされず長期トレンドを読む。競争優位性の設計・構造的問題の発見が得意。',
+    weakness: '現場感覚の欠如。データが示す「平均」に頼りすぎ、外れ値（重要シグナル）を見逃すことも。実行フェーズで苦戦しやすい。',
+    situation: 'M&A・事業戦略・政策立案・長期計画。勝つ構造を設計し、競争の文法そのものを変える必要がある場面。',
+    partner: '現場を知るオペレーション型。戦略の正しさは実行で検証されるため、実装者との緊密な連携が不可欠になる。'
+  },
+  adaptive: {
+    icon: '🔄', name: '適応型', type: 'Blend Type',
+    strength: '文脈の読解力。「今何が求められているか」を察知し、視点を柔軟に切り替えられる。どんな場でも機能する汎用性の高さ。',
+    weakness: '自分の「本来の思考スタイル」が曖昧になることがある。カメレオン的ゆえに、自分の軸が見えにくくなるリスク。',
+    situation: 'コンサルティング・スタートアップ初期・国際環境・多様なステークホルダーを扱う場面。文脈の変化が激しい環境。',
+    partner: '深い専門軸を持つ人。適応型は広さを武器に、深さを持つパートナーの価値を最大化する触媒として機能できる。'
+  }
+};
+
+const pDetail = document.getElementById('pDetail');
+
+document.querySelectorAll('.p-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const id = card.dataset.id;
+    const d = pData[id];
+    const wasActive = card.classList.contains('active') && pDetail.classList.contains('active');
+
+    document.querySelectorAll('.p-card').forEach(c => c.classList.remove('active'));
+
+    if (wasActive) {
+      pDetail.classList.remove('active');
+      return;
+    }
+
+    card.classList.add('active');
+    document.getElementById('dIcon').textContent = d.icon;
+    document.getElementById('dName').textContent = d.name;
+    document.getElementById('dType').textContent = d.type;
+    document.getElementById('dStrength').textContent = d.strength;
+    document.getElementById('dWeakness').textContent = d.weakness;
+    document.getElementById('dSituation').textContent = d.situation;
+    document.getElementById('dPartner').textContent = d.partner;
+    pDetail.classList.add('active');
+    setTimeout(() => pDetail.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+  });
+});
+
+/* ── SHARE ── */
+const shareBtn = document.getElementById('shareBtn');
+const toast = document.getElementById('toast');
+
+shareBtn.addEventListener('click', async () => {
+  const shareData = {
+    title: 'ミクロとマクロ — 視点の解剖学',
+    text: '同じ世界を、どのレンズで見るか。ミクロとマクロの違いをインタラクティブに探る。',
+    url: window.location.href
+  };
+
+  try {
+    if (navigator.share && /mobile|android|iphone/i.test(navigator.userAgent)) {
+      await navigator.share(shareData);
+    } else {
+      await navigator.clipboard.writeText(window.location.href);
+      showToast('リンクをコピーしました');
+    }
+  } catch {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      showToast('リンクをコピーしました');
+    } catch {
+      showToast('URLをコピーしてシェアしてね');
+    }
+  }
+});
+
+function showToast(msg) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2800);
+}
+</script>
+</body>
+</html>
